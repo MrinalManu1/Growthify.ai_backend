@@ -3,23 +3,60 @@ import TrendingReddit from "../models/TrendingReddit.js";
 import TrendingX from "../models/TrendingX.js";
 import TrendingMusic from "../models/TrendingMusic.js";
 import SavedTrend from "../models/SavedTrend.js";
+import { runAllCronJobs } from "./cronController.js";
+
+const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
+
+const deleteOldTrends = async () => {
+  const cutoff = new Date(Date.now() - THREE_DAYS_MS);
+
+  await Promise.all([
+    TrendingVideo.deleteMany({ timestamp: { $lt: cutoff } }),
+    TrendingReddit.deleteMany({ timestamp: { $lt: cutoff } }),
+    TrendingMusic.deleteMany({ timestamp: { $lt: cutoff } }),
+    TrendingX.deleteMany({ updatedAt: { $lt: cutoff } }),
+  ]);
+};
+
+const getTrendsPayload = async () => {
+  const youtubeTrends = await TrendingVideo.find().sort({ timestamp: -1 }).limit(50);
+  const redditTrends = await TrendingReddit.find().sort({ score: -1 }).limit(50);
+  const XTrends = await TrendingX.find().sort({ score: -1 }).limit(50);
+  const musicTrends = await TrendingMusic.find().sort({ score: -1 }).limit(50);
+
+  return {
+    youtube: youtubeTrends,
+    reddit: redditTrends,
+    x: XTrends,
+    youtube_music: musicTrends,
+  };
+};
 
 // API to get all trends for the frontend Trends.jsx page
 export const getAllTrends = async (req, res, next) => {
   try {
-    const youtubeTrends = await TrendingVideo.find().sort({ timestamp: -1 }).limit(50);
-    const redditTrends = await TrendingReddit.find().sort({ score: -1 }).limit(50);
-    const XTrends = await TrendingX.find().sort({ score: -1 }).limit(50);
-    const musicTrends = await TrendingMusic.find().sort({ score: -1 }).limit(50);
-    
+    const data = await getTrendsPayload();
+
     res.status(200).json({
       success: true,
-      data: {
-        youtube: youtubeTrends,
-        reddit: redditTrends,
-        x: XTrends,
-        youtube_music: musicTrends,
-      }
+      data
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const refreshTrends = async (req, res, next) => {
+  try {
+    await runAllCronJobs();
+    await deleteOldTrends();
+
+    const data = await getTrendsPayload();
+
+    res.status(200).json({
+      success: true,
+      message: "Trends refreshed successfully",
+      data
     });
   } catch (error) {
     next(error);

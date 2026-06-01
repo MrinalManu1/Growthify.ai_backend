@@ -11,11 +11,13 @@ import TrendingReddit from "../models/TrendingReddit.js";
 const bulkUpsertByKey = async (Model, docs, key) => {
   if (!docs.length) return;
 
+  const timestamp = new Date();
+
   await Model.bulkWrite(
     docs.map((doc) => ({
       updateOne: {
         filter: { [key]: doc[key] },
-        update: { $set: doc },
+        update: { $set: { ...doc, timestamp } },
         upsert: true,
       },
     })),
