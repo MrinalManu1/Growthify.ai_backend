@@ -7,6 +7,7 @@ import userRoutes from "./routes/userRoutes.js";
 import projectRoutes from "./routes/projectRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import aiRoutes from "./routes/aiRoutes.js";
+import scheduleRoutes from "./routes/scheduleRoutes.js";
 
 // Converted from require to import (added .js extension for ES modules)
 import trendingRoutes from "./routes/trendingRoutes.js";
@@ -33,6 +34,7 @@ app.use("/api/user", userRoutes);
 app.use("/api/projects", projectRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/schedule", scheduleRoutes);
 
 
 // New route for trending data  
